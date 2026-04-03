@@ -120,7 +120,7 @@ unsigned long lastSimUpdate = 0;
 
 const int HEARTBEAT_INTERVAL_MS = 200;
 const int ENCODER_UPDATE_INTERVAL_MS = 200;
-const int CAN_TX_TIMEOUT_MS = 2;
+const int CAN_TX_TIMEOUT_MS = 4;
 
 const float SIM_SLEW_RATE_TURNS_PER_SEC = 0.01f;
 const float SIM_POSITION_TOLERANCE_TURNS = 0.00006f; // about 79 arcsec
