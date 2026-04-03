@@ -1,0 +1,68 @@
+
+
+// First, we need to give the Controller class a place to store these coefficients. 
+// Add this to your Controller class definition:
+
+// In controller.hpp, inside the Controller class
+struct NotchConfig {
+    float b0 = 1.0f, b1 = 0, b2 = 0, a1 = 0, a2 = 0;
+    float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    bool enabled = false;
+} notch_;
+
+// Add a function to reset the filter memory (crucial when changing coeffs)
+void reset_notch() {
+    notch_.x1 = notch_.x2 = notch_.y1 = notch_.y2 = 0;
+}
+
+// Inside Controller::update, we apply the filter. It's best to do this at the very 
+// end of the function, right before torque_setpoint_ is finalized.
+
+// In controller.cpp, inside Controller::update()
+// ... after velocity and position PIDs are calculated ...
+
+// if (notch_.enabled) {
+//     float x = torque_setpoint_;
+//     float y = notch_.b0 * x + notch_.b1 * notch_.x1 + notch_.b2 * notch_.x2
+//             - notch_.a1 * notch_.y1 - notch_.a2 * notch_.y2;
+
+//     // Update memory for next cycle
+//     notch_.x2 = notch_.x1;
+//     notch_.x1 = x;
+//     notch_.y2 = notch_.y1;
+//     notch_.y1 = y;
+
+//     torque_setpoint_ = y;
+// }
+
+
+
+// Since a CAN frame only holds 8 bytes (two float values), we’ll use a multiplexed 
+// command. We'll use a specific index in the first byte to tell the ODrive which 
+// coefficients are arriving.
+
+// Pick an unused Command ID (e.g., 0x1E).
+
+// In can_simple.cpp, inside the ON_CAN_MESSAGE(SET_NOTCH_COEFFS) handler:
+// void set_notch_callback(const can_Message_t& msg, Axis& axis) {
+//     uint8_t index = msg.buf[0]; // First byte is our index
+//     float val1, val2;
+//     memcpy(&val1, &msg.buf[1], 4); // Next 4 bytes
+//     // Note: If you want to send two floats, you'd need 9 bytes. 
+//     // To stay safe, let's send one float per message with an index.
+
+//     switch(index) {
+//         case 0: axis.controller_.notch_.b0 = val1; break;
+//         case 1: axis.controller_.notch_.b1 = val1; break;
+//         case 2: axis.controller_.notch_.b2 = val1; break;
+//         case 3: axis.controller_.notch_.a1 = val1; break;
+//         case 4: axis.controller_.notch_.a2 = val1; break;
+//         case 5: 
+//             axis.controller_.notch_.enabled = (val1 > 0.5f); 
+//             axis.controller_.reset_notch(); // Clear memory when enabling
+//             break;
+//     }
+// }
+
+
+
